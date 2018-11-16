@@ -32,20 +32,38 @@ p2_dataset =
 
 homicides =
   p2_dataset %>% 
-  mutate(reported_year = as.integer(substr(reported_date, 1, 4)),
-         reported_month = month.abb[as.integer(substr(reported_date, 5, 6))],
-         reported_day = as.integer(substr(reported_date, 7, 8)),
-         victim_race = fct_relevel(ifelse(victim_race == "White", "white", "non-white"), "white"),
+  mutate(victim_race = fct_relevel(ifelse(victim_race == "White", "white", "non-white"), "white"),
          victim_age = ifelse(victim_age == "Unknown", NA, as.integer(victim_age)),
          victim_sex = as.factor(victim_sex),
          city_state = paste(paste0(city, ","), state),
-         case_solved = ifelse(disposition == "Closed by arrest", "resloved", "unresolved")) %>% 
+         resolved = as.numeric(disposition == "Closed by arrest")) %>% 
   filter(!city_state %in% c("Dallas, TX", "Phoenix, AZ", "Kansas City, MO", "Tulsa, AL")) %>% 
-  select(uid, reported_year, reported_month, reported_day, victim_race, victim_age, victim_sex, city_state,
-         case_solved)
+  select(uid, victim_race, victim_age, victim_sex, city_state, resolved)
+
 
 ```
 
+## Problem 2_3
+```{r p2_3}
+
+baltimore_logistic = 
+  homicides %>%
+  filter(city_state == "Baltimore, MD") %>% 
+  glm(resolved ~ victim_age + victim_sex + victim_race, data = ., family = binomial()) 
+
+# save baltimore_logistic as an object
+save(baltimore_logistic, file = "Baltimore_logistic.RData")
+
+baltimore_logistic %>% 
+  broom::tidy() %>% 
+  mutate(OR = exp(estimate),
+         lower = exp(estimate - 1.96 * std.error),
+         upper = exp(estimate + 1.96 * std.error)) %>% 
+  filter(term == "victim_racenon-white") %>% 
+  select(beta = estimate, p.value, OR, lower, upper) %>% 
+  knitr::kable(digit = 3)
+
+```
 
 
 
