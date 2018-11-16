@@ -7,24 +7,45 @@ output: github_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(rvest)
+library(httr)
+
+theme_set(theme_bw())
+
 ```
 
-## R Markdown
+## Problem 2_1
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+```{r p2_1}
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+p2_dataset = 
+  RCurl::getURL("https://raw.githubusercontent.com/washingtonpost/data-homicides/master/homicide-data.csv") %>%
+    read_csv()
 
-```{r cars}
-summary(cars)
 ```
 
-## Including Plots
+## Problem 2_2
 
-You can also embed plots, for example:
+```{r p2_2}
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+homicides =
+  p2_dataset %>% 
+  mutate(reported_year = as.integer(substr(reported_date, 1, 4)),
+         reported_month = month.abb[as.integer(substr(reported_date, 5, 6))],
+         reported_day = as.integer(substr(reported_date, 7, 8)),
+         victim_race = fct_relevel(ifelse(victim_race == "White", "white", "non-white"), "white"),
+         victim_age = ifelse(victim_age == "Unknown", NA, as.integer(victim_age)),
+         victim_sex = as.factor(victim_sex),
+         city_state = paste(paste0(city, ","), state),
+         case_solved = ifelse(disposition == "Closed by arrest", "resloved", "unresolved")) %>% 
+  filter(!city_state %in% c("Dallas, TX", "Phoenix, AZ", "Kansas City, MO", "Tulsa, AL")) %>% 
+  select(uid, reported_year, reported_month, reported_day, victim_race, victim_age, victim_sex, city_state,
+         case_solved)
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+
