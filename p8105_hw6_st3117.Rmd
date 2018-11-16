@@ -57,13 +57,59 @@ save(baltimore_logistic, file = "Baltimore_logistic.RData")
 baltimore_logistic %>% 
   broom::tidy() %>% 
   mutate(OR = exp(estimate),
-         lower = exp(estimate - 1.96 * std.error),
-         upper = exp(estimate + 1.96 * std.error)) %>% 
+         conf.low = exp(estimate - 1.96 * std.error),
+         conf.high = exp(estimate + 1.96 * std.error)) %>% 
   filter(term == "victim_racenon-white") %>% 
-  select(beta = estimate, p.value, OR, lower, upper) %>% 
+  select(beta = estimate, p.value, OR, conf.low, conf.high) %>% 
   knitr::kable(digit = 3)
 
 ```
+
+## Problem 2_4
+
+```{r}
+
+# create function for all city glm
+city_logistic = function(x){
+  
+    homicides %>% 
+    filter(city_state == x) %>% 
+    glm(resolved ~ victim_age + victim_sex + victim_race, data = ., family = binomial())  %>% 
+    broom::tidy() %>% 
+    mutate(OR = exp(estimate),
+           conf.low = exp(estimate - 1.96 * std.error),
+           conf.high = exp(estimate + 1.96 * std.error)) %>% 
+    filter(term == "victim_racenon-white") %>% 
+    select(beta = estimate, p.value, OR, conf.low, conf.high)
+
+}
+
+# compute city proportion test
+city_result = 
+  tibble(city_state = unique(homicides$city_state)) %>% 
+  mutate(map(.x = unique(homicides$city_state), ~city_logistic(.x))) %>% 
+  unnest
+
+
+```
+
+## Problem 2_5
+```{r}
+
+city_result %>% 
+  ggplot(aes(x = reorder(city_state, OR), y = OR)) +
+    geom_point() +
+    geom_errorbar(aes(ymin = conf.low, ymax = conf.high)) +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.3, size = 7)) +
+    labs(
+      x = "City",
+      y = "Odds Ratio",
+      title = "Estimated Odds Ratio for Solving Homicides Comparing Non-white Victims to White Victims"
+    )
+
+```
+
+
 
 
 
