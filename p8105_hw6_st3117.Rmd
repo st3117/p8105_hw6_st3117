@@ -14,10 +14,11 @@ library(httr)
 library(modelr)
 
 theme_set(theme_bw())
+set.seed(1)
 
 ```
 
-## Problem 1_1
+## Problem 1_1 Load 'homicides' Data from Github
 
 ```{r p1_1}
 
@@ -27,7 +28,7 @@ p2_dataset =
 
 ```
 
-## Problem 1_2
+## Problem 1_2 Clean Data
 
 ```{r p1_2}
 
@@ -41,10 +42,10 @@ homicides =
   filter(!city_state %in% c("Dallas, TX", "Phoenix, AZ", "Kansas City, MO", "Tulsa, AL")) %>% 
   select(uid, victim_race, victim_age, victim_sex, city_state, resolved)
 
-
 ```
 
-## Problem 1_3
+## Problem 1_3 Compute Odds Ratio and 95% CI for solving homicides in Baltimore
+
 ```{r p1_3}
 
 baltimore_logistic = 
@@ -66,11 +67,11 @@ baltimore_logistic %>%
 
 ```
 
-## Problem 1_4
+## Problem 1_4 Compute Odds Ratio and 95% CI for solving homicides in All Cities
 
-```{r}
+```{r p1_4}
 
-# create function for all city glm
+# create function for all city logistic regression
 city_logistic = function(x){
   
     homicides %>% 
@@ -85,17 +86,17 @@ city_logistic = function(x){
 
 }
 
-# compute city proportion test
+# compute all cities' logistic regression
 city_result = 
   tibble(city_state = unique(homicides$city_state)) %>% 
   mutate(map(.x = unique(homicides$city_state), ~city_logistic(.x))) %>% 
   unnest
 
-
 ```
 
-## Problem 1_5
-```{r}
+## Problem 1_5 Show Estimated Odds Ratio for Solving Homicides Comparing Non-white Victims to White Victims
+
+```{r p1_5}
 
 city_result %>% 
   ggplot(aes(x = reorder(city_state, OR), y = OR)) +
@@ -110,16 +111,22 @@ city_result %>%
 
 ```
 
-## Problem 2_1
+## Problem 2_1 Load 'Children Birth Weight' Data
 
-```{r}
+```{r p2_1}
 
 children = 
   read_csv(file = "./data/birthweight.csv")
 
+skimr::skim(children)
+
 ```
 
-```{r}
+There was no missing data in the dataset.
+
+## Problem 2_2 Propose a regression model for birthweight
+
+```{r p2_2}
 
 null_model = lm(bwt ~ 1, data = children)
 full_model = lm(bwt ~ ., data = children)
@@ -127,36 +134,95 @@ full_model = lm(bwt ~ ., data = children)
 stepwise = step(null_model, scope = list(upper = full_model), data = children, direction = "both")
 stepwise %>% broom::tidy()
 
-proposed_model = lm(bwt ~ bhead + blength + babysex + delwt + mrace + gaweeks, data = children)
+proposed_model1 = lm(bwt ~ bhead + blength + babysex + delwt + mrace + gaweeks, data = children)
+proposed_model2 = mgcv::gam(bwt ~ s(bhead) + s(blength) + babysex + s(delwt) + mrace +s(gaweeks), data = children)
 
 ```
 
 Step-wise selection is a data-driven model-building process, by performing it, we got 13 significant variables.
-By simplily searching the association of birth weight and the 13 variables online, I narrowed it down to 6 variables: baby’s head circumference at birth, baby’s length at birth, baby’s sex, mother’s weight at delivery, mother’s race, and gestational age in weeks.
+By simplily searching the association between birth weight and the 13 variables online, I narrowed it down to 6 variables: baby’s head circumference at birth, baby’s length at birth, baby’s sex, mother’s weight at delivery, mother’s race, and gestational age in weeks.
 
-```{r}
+At first, I just propsed the linear model "proposed_model1", however, since the residual vs. fit below showed some violiation of our linear assumption, I decided to include a non-linear "proposed_model2" with the same 6 variables.
 
-resid_fit = 
+## Problem 2_3 Residual vs. Fit Plots
+
+```{r p2_3}
+
+resid_fit1 = 
   children %>% 
-  add_predictions(model = proposed_model) %>% 
-  add_residuals(model = proposed_model)
+  add_predictions(model = proposed_model1) %>% 
+  add_residuals(model = proposed_model1)
 
-ggplot(resid_fit, aes(x = pred, y = resid)) +
-    geom_point()
+ggplot(resid_fit1, aes(x = pred, y = resid)) +
+    geom_point() +
+    labs(
+      x = "Prediction",
+      y = "Residual",
+      title = "Residual vs. Fit For Proposed Model 1"
+    )
   
+resid_fit2 = 
+  children %>% 
+  add_predictions(model = proposed_model2) %>% 
+  add_residuals(model = proposed_model2)
+
+ggplot(resid_fit2, aes(x = pred, y = resid)) +
+    geom_point() +
+    labs(
+      x = "Prediction",
+      y = "Residual",
+      title = "Residual vs. Fit For Proposed Model 2"
+    )
+
 ```
 
-Three characteristics of a well-behaved residual vs. fits plot and what they suggest about the appropriateness of the simple linear regression model:
-* The residuals "bounce randomly" around the 0 line. This suggests that the assumption that the relationship is linear is reasonable.
-* The residuals roughly form a "horizontal band" around the 0 line. This suggests that the variances of the error terms are equal.
-* No one residual "stands out" from the basic random pattern of residuals. This suggests that there are no outliers.
+Three characteristics of a well-behaved residual vs. fits plot:
+* The residuals "bounce randomly" around the 0 line. T
+* The residuals roughly form a "horizontal band" around the 0 line.
+* No one residual "stands out" from the basic random pattern of residuals.
 
-Overall, except few outliers < 1000 grams, this residual vs. fits plot has fairly random scatter pattern around the 0 line.
+The residual vs. fits plot for proposed model 1 has some has some obvious outliers when the predicted birth weight less than 2000 grams. Thus, I proposed a non-linear proposed model 2 in the previous sections, and the plot has fairly random scatter pattern around the 0 line.
 
-```{r}
+## Problem 2_4 Training / Testing Split 
+
+```{r p2_4}
+
+cv_children =
+  crossv_mc(children, 100) %>% 
+  mutate(train = map(train, as_tibble),
+         test = map(test, as_tibble))
 
 ```
 
+## Problem 2_5 List Columns of the Models and Their RMSE
 
+```{r p2_5}
 
+cv_children_test = 
+  cv_children %>% 
+  mutate(adjust_mod_1 = map(train, ~lm(bwt ~ blength + gaweeks, data = .x)),
+         adjust_mod_2 = map(train, ~lm(bwt ~ bhead * blength * babysex, data = .x)),
+         proposed_mod1 = map(train, ~lm(bwt ~ bhead + blength + babysex + delwt + mrace + gaweeks, data = .x)),
+         proposed_mod2 = map(train, ~mgcv::gam(bwt ~ s(bhead) + s(blength) + babysex +s(delwt) + mrace + 
+                                                 s(gaweeks), data = .x))) %>% 
+  mutate(rmse_adj_1 = map2_dbl(adjust_mod_1, test, ~rmse(model = .x, data = .y)),
+         rmse_adj_2 = map2_dbl(adjust_mod_2, test, ~rmse(model = .x, data = .y)),
+         rmse_propsed1 = map2_dbl(proposed_mod1, test, ~rmse(model = .x, data = .y)),
+         rmse_propsed2 = map2_dbl(proposed_mod2, test, ~rmse(model = .x, data = .y)))
 
+```
+
+## Problem 2_6 Models' Comparison Using Violin Plot
+
+```{r p2_6}
+
+cv_children_test %>% 
+  select(starts_with("rmse")) %>% 
+  gather(key = model, value = rmse) %>% 
+  mutate(model = str_replace(model, "rmse_", ""),
+         model = fct_inorder(model)) %>% 
+  ggplot(aes(x = model, y = rmse)) + geom_violin()
+
+```
+
+Based on the violin plot, our proposed model 2 has the smallest RMSE, thus I'll choose this model among the 4 models.
