@@ -11,14 +11,15 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(rvest)
 library(httr)
+library(modelr)
 
 theme_set(theme_bw())
 
 ```
 
-## Problem 2_1
+## Problem 1_1
 
-```{r p2_1}
+```{r p1_1}
 
 p2_dataset = 
   RCurl::getURL("https://raw.githubusercontent.com/washingtonpost/data-homicides/master/homicide-data.csv") %>%
@@ -26,9 +27,9 @@ p2_dataset =
 
 ```
 
-## Problem 2_2
+## Problem 1_2
 
-```{r p2_2}
+```{r p1_2}
 
 homicides =
   p2_dataset %>% 
@@ -43,8 +44,8 @@ homicides =
 
 ```
 
-## Problem 2_3
-```{r p2_3}
+## Problem 1_3
+```{r p1_3}
 
 baltimore_logistic = 
   homicides %>%
@@ -65,7 +66,7 @@ baltimore_logistic %>%
 
 ```
 
-## Problem 2_4
+## Problem 1_4
 
 ```{r}
 
@@ -93,7 +94,7 @@ city_result =
 
 ```
 
-## Problem 2_5
+## Problem 1_5
 ```{r}
 
 city_result %>% 
@@ -109,6 +110,52 @@ city_result %>%
 
 ```
 
+## Problem 2_1
+
+```{r}
+
+children = 
+  read_csv(file = "./data/birthweight.csv")
+
+```
+
+```{r}
+
+null_model = lm(bwt ~ 1, data = children)
+full_model = lm(bwt ~ ., data = children)
+
+stepwise = step(null_model, scope = list(upper = full_model), data = children, direction = "both")
+stepwise %>% broom::tidy()
+
+proposed_model = lm(bwt ~ bhead + blength + babysex + delwt + mrace + gaweeks, data = children)
+
+```
+
+Step-wise selection is a data-driven model-building process, by performing it, we got 13 significant variables.
+By simplily searching the association of birth weight and the 13 variables online, I narrowed it down to 6 variables: baby’s head circumference at birth, baby’s length at birth, baby’s sex, mother’s weight at delivery, mother’s race, and gestational age in weeks.
+
+```{r}
+
+resid_fit = 
+  children %>% 
+  add_predictions(model = proposed_model) %>% 
+  add_residuals(model = proposed_model)
+
+ggplot(resid_fit, aes(x = pred, y = resid)) +
+    geom_point()
+  
+```
+
+Three characteristics of a well-behaved residual vs. fits plot and what they suggest about the appropriateness of the simple linear regression model:
+* The residuals "bounce randomly" around the 0 line. This suggests that the assumption that the relationship is linear is reasonable.
+* The residuals roughly form a "horizontal band" around the 0 line. This suggests that the variances of the error terms are equal.
+* No one residual "stands out" from the basic random pattern of residuals. This suggests that there are no outliers.
+
+Overall, except few outliers < 1000 grams, this residual vs. fits plot has fairly random scatter pattern around the 0 line.
+
+```{r}
+
+```
 
 
 
