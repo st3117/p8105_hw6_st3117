@@ -30,7 +30,7 @@ p2_dataset =
 
 ## Problem 1_2 Clean Data
 
-```{r p1_2}
+```{r p1_2, warning = FALSE}
 
 homicides =
   p2_dataset %>% 
@@ -48,14 +48,17 @@ homicides =
 
 ```{r p1_3}
 
+# filter out Baltimore and do logistic regression
 baltimore_logistic = 
   homicides %>%
   filter(city_state == "Baltimore, MD") %>% 
   glm(resolved ~ victim_age + victim_sex + victim_race, data = ., family = binomial()) 
 
 # save baltimore_logistic as an object
-save(baltimore_logistic, file = "Baltimore_logistic.RData")
+# I got a comment for homework 5 that I did't need to actually save it as an R object, thus I'll leave it as a comment
+# save(baltimore_logistic, file = "Baltimore_logistic.RData")
 
+# compute and tidy the logistic result
 baltimore_logistic %>% 
   broom::tidy() %>% 
   mutate(OR = exp(estimate),
@@ -92,11 +95,16 @@ city_result =
   mutate(map(.x = unique(homicides$city_state), ~city_logistic(.x))) %>% 
   unnest
 
+# check some of the all cities' logistic regression result
+city_result %>% 
+  head() %>% 
+  knitr::kable(digit = 3)
+
 ```
 
 ## Problem 1_5 Show Estimated Odds Ratio for Solving Homicides Comparing Non-white Victims to White Victims
 
-```{r p1_5}
+```{r p1_5, out.width = "100%"}
 
 city_result %>% 
   ggplot(aes(x = reorder(city_state, OR), y = OR)) +
@@ -106,14 +114,17 @@ city_result %>%
     labs(
       x = "City",
       y = "Odds Ratio",
-      title = "Estimated Odds Ratio for Solving Homicides Comparing Non-white Victims to White Victims"
+      title = "Estimated Odds Ratio for Solving Homicides Comparing Non-white to White"
     )
 
 ```
 
+Among all cities, Tampa, FL had the highest odds ratio for solving homicides comparing non-white victims to white victims, while Boston, MA had the lowest odds ratio.\
+Durham, NC had the widest 95% CI.
+
 ## Problem 2_1 Load 'Children Birth Weight' Data
 
-```{r p2_1}
+```{r p2_1, message = FALSE}
 
 children = 
   read_csv(file = "./data/birthweight.csv")
@@ -122,17 +133,25 @@ skimr::skim(children)
 
 ```
 
-There was no missing data in the dataset.
+There was no missing data in the dataset. The distribution of the variables looks reasonable. Variables pnumlbw (previous number of low birth weight babies) and pnumsga (number of prior small for gestational age babies) are all 0 is probably due to the fact the there's few live births prior to this pregency in this dataset.
 
 ## Problem 2_2 Propose a regression model for birthweight
 
-```{r p2_2}
+```{r p2_2, results = "hide"}
 
+# write out the full and null model for the stepwise selection
 null_model = lm(bwt ~ 1, data = children)
 full_model = lm(bwt ~ ., data = children)
 
 stepwise = step(null_model, scope = list(upper = full_model), data = children, direction = "both")
-stepwise %>% broom::tidy()
+
+```
+
+```{r p2_2_results}
+
+stepwise %>% 
+  broom::tidy() %>% 
+  knitr::kable(digit = 3)
 
 proposed_model1 = lm(bwt ~ bhead + blength + babysex + delwt + mrace + gaweeks, data = children)
 proposed_model2 = mgcv::gam(bwt ~ s(bhead) + s(blength) + babysex + s(delwt) + mrace +s(gaweeks), data = children)
@@ -142,12 +161,13 @@ proposed_model2 = mgcv::gam(bwt ~ s(bhead) + s(blength) + babysex + s(delwt) + m
 Step-wise selection is a data-driven model-building process, by performing it, we got 13 significant variables.
 By simplily searching the association between birth weight and the 13 variables online, I narrowed it down to 6 variables: baby’s head circumference at birth, baby’s length at birth, baby’s sex, mother’s weight at delivery, mother’s race, and gestational age in weeks.
 
-At first, I just propsed the linear model "proposed_model1", however, since the residual vs. fit below showed some violiation of our linear assumption, I decided to include a non-linear "proposed_model2" with the same 6 variables.
+At first, I just propsed the linear model "proposed_model1", however, since the residual vs. fit below showed some violation of our linear assumption, I decided to include a non-linear "proposed_model2" with the same 6 variables.
 
 ## Problem 2_3 Residual vs. Fit Plots
 
 ```{r p2_3}
 
+# proposed linear model
 resid_fit1 = 
   children %>% 
   add_predictions(model = proposed_model1) %>% 
@@ -160,7 +180,8 @@ ggplot(resid_fit1, aes(x = pred, y = resid)) +
       y = "Residual",
       title = "Residual vs. Fit For Proposed Model 1"
     )
-  
+
+# proposed non-linear model
 resid_fit2 = 
   children %>% 
   add_predictions(model = proposed_model2) %>% 
@@ -176,8 +197,9 @@ ggplot(resid_fit2, aes(x = pred, y = resid)) +
 
 ```
 
-Three characteristics of a well-behaved residual vs. fits plot:
-* The residuals "bounce randomly" around the 0 line. T
+Three characteristics of a well-behaved residual vs. fits plot is
+
+* The residuals "bounce randomly" around the 0 line.
 * The residuals roughly form a "horizontal band" around the 0 line.
 * No one residual "stands out" from the basic random pattern of residuals.
 
