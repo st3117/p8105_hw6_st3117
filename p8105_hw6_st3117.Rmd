@@ -18,7 +18,9 @@ set.seed(1)
 
 ```
 
-## Problem 1_1 Load 'homicides' Data from Github
+## Problem 1. In this problem, we will analyze homicides data gathered in 50 large U.S. cities, and find the association between race and case solving.
+
+### Problem 1_1. Load 'homicides' Data from Github
 
 ```{r p1_1}
 
@@ -28,7 +30,7 @@ p2_dataset =
 
 ```
 
-## Problem 1_2 Clean Data
+### Problem 1_2. Clean Data
 
 ```{r p1_2, warning = FALSE}
 
@@ -44,7 +46,7 @@ homicides =
 
 ```
 
-## Problem 1_3 Compute Odds Ratio and 95% CI for solving homicides in Baltimore
+### Problem 1_3. Compute Odds Ratio and 95% CI for solving homicides in Baltimore
 
 ```{r p1_3}
 
@@ -73,7 +75,7 @@ baltimore_logistic %>%
 The odds of solving homicides in Baltimore among non-white is 0.441 times the odds comparing to white.
 The true odds ratio lies between 0.313 and 0.62.
 
-## Problem 1_4 Compute Odds Ratio and 95% CI for solving homicides in All Cities
+### Problem 1_4. Compute Odds Ratio and 95% CI for solving homicides in All Cities
 
 ```{r p1_4}
 
@@ -105,7 +107,7 @@ city_result %>%
 
 ```
 
-## Problem 1_5 Show Estimated Odds Ratio for Solving Homicides Comparing Non-white Victims to White Victims
+### Problem 1_5. Show Estimated Odds Ratio for Solving Homicides Comparing Non-white Victims to White Victims
 
 ```{r p1_5, out.width = "100%"}
 
@@ -125,7 +127,9 @@ city_result %>%
 Among all cities, Tampa, FL had the highest odds ratio for solving homicides comparing non-white victims to white victims, while Boston, MA had the lowest odds ratio.\
 Durham, NC had the widest 95% CI.
 
-## Problem 2_1 Load 'Children Birth Weight' Data
+## Problem 2. In this probelm, we will analyze data gathered to understand the effects of several variables on a child’s birthweight.
+
+### Problem 2_1. Load 'Children Birth Weight' Data
 
 ```{r p2_1, message = FALSE}
 
@@ -145,7 +149,7 @@ skimr::skim(children)
 
 There was no missing data in the dataset. The distribution of the variables looks reasonable. Variables pnumlbw (previous number of low birth weight babies) and pnumsga (number of prior small for gestational age babies) are all 0 is probably due to the fact the there's few live births prior to this pregency in this dataset.
 
-## Problem 2_2 Propose a regression model for birthweight
+### Problem 2_2. Propose a regression model for birthweight
 
 ```{r p2_2, results = "hide"}
 
@@ -173,7 +177,7 @@ By simplily searching the association between birth weight and the 13 variables 
 
 At first, I just propsed the linear model "proposed_model1", however, since the residual vs. fit below showed some violation of our linear assumption, I decided to include a non-linear "proposed_model2" with the same 6 variables.
 
-## Problem 2_3 Residual vs. Fit Plots
+### Problem 2_3. Residual vs. Fit Plots
 
 ```{r p2_3}
 
@@ -213,9 +217,9 @@ Three characteristics of a well-behaved residual vs. fits plot is
 * The residuals roughly form a "horizontal band" around the 0 line.
 * No one residual "stands out" from the basic random pattern of residuals.
 
-The residual vs. fits plot for proposed model 1 has some has some obvious outliers when the predicted birth weight less than 2000 grams. Thus, I proposed a non-linear proposed model 2 in the previous sections, and the plot has fairly random scatter pattern around the 0 line.
+The residual vs. fits plot for proposed model 1 has some obvious outliers when the predicted birth weight less than 2000 grams. Thus, I proposed a non-linear proposed model 2 in the previous sections, and the plot has fairly random scatter pattern around the 0 line.
 
-## Problem 2_4 Training / Testing Split 
+### Problem 2_4. Training / Testing Split 
 
 ```{r p2_4}
 
@@ -226,7 +230,7 @@ cv_children =
 
 ```
 
-## Problem 2_5 List Columns of the Models and Their RMSE
+### Problem 2_5. List Columns of the Models and Their RMSE
 
 ```{r p2_5}
 
@@ -244,7 +248,7 @@ cv_children_test =
 
 ```
 
-## Problem 2_6 Models' Comparison Using Violin Plot
+### Problem 2_6. Models' Comparison Using Violin Plot
 
 ```{r p2_6}
 
