@@ -70,6 +70,9 @@ baltimore_logistic %>%
 
 ```
 
+The odds of solving homicides in Baltimore among non-white is 0.441 times the odds comparing to white.
+The true odds ratio lies between 0.313 and 0.62.
+
 ## Problem 1_4 Compute Odds Ratio and 95% CI for solving homicides in All Cities
 
 ```{r p1_4}
@@ -129,6 +132,13 @@ Durham, NC had the widest 95% CI.
 children = 
   read_csv(file = "./data/birthweight.csv")
 
+children =
+  children %>% 
+  mutate(babysex = as.factor(babysex),
+         frace = as.factor(frace),
+         malform = as.factor(malform),
+         mrace = as.factor(mrace))
+
 skimr::skim(children)
 
 ```
@@ -158,7 +168,7 @@ proposed_model2 = mgcv::gam(bwt ~ s(bhead) + s(blength) + babysex + s(delwt) + m
 
 ```
 
-Step-wise selection is a data-driven model-building process, by performing it, we got 13 significant variables.
+Step-wise selection is a data-driven model-building process, by performing it, we got 13 significant variables (including dummy variables).
 By simplily searching the association between birth weight and the 13 variables online, I narrowed it down to 6 variables: baby’s head circumference at birth, baby’s length at birth, baby’s sex, mother’s weight at delivery, mother’s race, and gestational age in weeks.
 
 At first, I just propsed the linear model "proposed_model1", however, since the residual vs. fit below showed some violation of our linear assumption, I decided to include a non-linear "proposed_model2" with the same 6 variables.
@@ -247,4 +257,4 @@ cv_children_test %>%
 
 ```
 
-Based on the violin plot, our proposed model 2 has the smallest RMSE, thus I'll choose this model among the 4 models.
+Based on the violin plot, both proposed models are significantly better than the two provided models. Due to the fact that our proposed model 2 has better 'residual vs. fit', as well as having the smallest RMSE, I'll choose this model among the 4 models.
